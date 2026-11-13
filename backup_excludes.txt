@@ -1,0 +1,19 @@
+# Files/folders NOT copied to the backup (one rsync pattern per line).
+
+# macOS junk
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.TemporaryItems
+.DocumentRevisions-V100
+
+# Pro Tools waveform caches (rebuilt automatically)
+WaveCache.wfm
+
+# Temp files
+*.tmp
+
+# Optional: Cubase auto-saves (remove the # to skip them)
+# Auto Saves/

@@ -1,0 +1,115 @@
+#!/bin/bash
+# One command for everything – with Tab completion in zsh (see studio.zsh).
+#
+#   studio init [folder]               set up a Studio folder (structure, double-click files, command)
+#   studio start                       Start session (Studio Mode)
+#   studio end                         End session (note, backup, Studio Mode off)
+#   studio new [options] "Artist" "Title" ["Song" …]
+#   studio add [options] [PROJECT] ["Song" …]
+#   studio archive [--no-keep] [PROJECT]
+#   studio check [PROJECT|folder]      check received files (rate, length, clipping) before importing
+#   studio mp3 [--all] [PROJECT|files] MP3 copies of the final mixes / masters
+#   studio approve [PROJECT]           choose the approved version if it is not the newest
+#   studio deliver [PROJECT]           build the client package (WAV + MP3 + tracklist + zip)
+#   studio backup                      backup to the SSD now (without ending the session)
+#   studio status                      overview: projects, sizes, last notes, backup
+#   studio list                        all projects, newest first (quick)
+#   studio plugins                     plugin inventory (run before updates)
+#   studio tags                        (re)apply the coloured Finder tags to all projects
+#   studio open [PROJECT]              open the project folder in Finder
+#   studio cd [PROJECT]                go to the project folder (zsh only)
+#
+# PROJECT = any part of the project name ("night", "demo") or nothing -> list.
+
+D="$(cd "$(dirname "$0")" && pwd)"
+cmd="$1"; [ $# -gt 0 ] && shift
+
+case "$cmd" in
+    init)    exec /bin/bash "$D/init_studio.sh" "$@" ;;
+    ""|help|-h|--help)
+             sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    start)   exec /bin/bash "$D/start_session.sh" ;;
+    end)     exec /bin/bash "$D/end_session.sh" ;;
+    new)     exec /bin/bash "$D/new_project.sh" "$@" ;;
+    add)     exec /bin/bash "$D/add_songs.sh" "$@" ;;
+    archive) exec /bin/bash "$D/archive_project.sh" "$@" ;;
+    backup)  exec /bin/bash "$D/studio_backup.sh" ;;
+    plugins) exec /bin/bash "$D/plugin_inventory.sh" ;;
+    check)   exec /bin/bash "$D/check_files.sh" "$@" ;;
+    mp3)     exec /bin/bash "$D/make_mp3.sh" "$@" ;;
+    deliver) exec /bin/bash "$D/deliver.sh" "$@" ;;
+    approve) exec /bin/bash "$D/approve.sh" "$@" ;;
+esac
+
+source "$D/_common.sh"
+
+case "$cmd" in
+    list)
+        list_projects | while IFS= read -r p; do
+            t="$(log_field "$p" TYPE | sed 's/^[a-z]* (\(.*\))$/\1/')"
+            last="$(grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}  ' "$p/00_Admin/Session_Log.txt" | tail -1)"
+            printf "%-50s %-16s %s\n" "$(basename "$p")" "${t:-Full production}" "$last"
+        done ;;
+    open)
+        p="$(pick_project "$1")" && open "$p" ;;
+
+    status)
+        now=$(date +%s)
+        echo "STUDIO STATUS   $(date '+%Y-%m-%d %H:%M')"
+        echo
+        echo "Mac:      $(( $(df -k "$STUDIO_ROOT" | awk 'NR==2 {print $4}') / 1024 / 1024 )) GB free"
+        if volume_mounted "$ARCHIVE_VOLUME"; then
+            last="$(cat "$ARCHIVE_VOLUME/Studio_Mirror/.last_backup" 2>/dev/null)"
+            if [ -n "$last" ]; then
+                d=$(( (now - $(date -j -f '%Y-%m-%d %H:%M:%S' "$last" +%s)) / 86400 ))
+                echo "Backup:   SSD connected – last backup $last ($d day(s) ago)"
+            else
+                echo "Backup:   SSD connected – no backup on it yet"
+            fi
+            n="$(find "$ARCHIVE_VOLUME/Projects" -mindepth 2 -maxdepth 2 -type d 2>/dev/null | wc -l | tr -d ' ')"
+            echo "Archive:  $n project(s) on the SSD"
+        else
+            echo "Backup:   SSD '$(basename "$ARCHIVE_VOLUME")' not connected"
+        fi
+        STATE="${TMPDIR:-/tmp}/studio_session.state"
+        if [ -f "$STATE" ]; then
+            st="$(sed -n 's/^START=//p' "$STATE")"; sp="$(sed -n 's/^PROJECT=//p' "$STATE")"
+            echo "Session:  Studio Mode ON since $(date -r "$st" '+%H:%M')${sp:+ – $(basename "$sp")}"
+        else
+            echo "Session:  Studio Mode off"
+        fi
+        echo
+        printf "%-44s %-16s %-11s %7s  %s\n" "PROJECT" "TYPE" "LAST WORK" "SIZE" "LAST NOTE"
+        list_projects_t | while IFS=$'\t' read -r t p; do
+            note="$(grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}  ' "$p/00_Admin/Session_Log.txt" | tail -1 | cut -c13-)"
+            [ ${#note} -gt 46 ] && note="${note:0:45}…"
+            name="$(basename "$p")"; [ ${#name} -gt 44 ] && name="${name:0:43}…"
+            printf "%-44s %-16s %-11s %7s  %s\n" "$name" "$(project_label "$p")" \
+                "$(date -r "${t:-0}" +%Y-%m-%d)" "$(du -sh "$p" 2>/dev/null | cut -f1 | tr -d ' ')" "$note"
+        done
+        kept="$(find "$STUDIO_ROOT/03_LIBRARY/Portfolio" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')"
+        echo
+        echo "Portfolio: $kept archived project(s) with finals on the Mac" ;;
+
+    tags)
+        list_projects | while IFS= read -r p; do
+            l="$(project_label "$p")"
+            set_type_tag "$p" "$l" && printf "  %-16s %s\n" "$l" "$(basename "$p")"
+        done
+        echo "Colours: Full production red · Recording orange · Mixing blue · Mastering purple · Songwriting green" ;;
+
+    # --- helpers for studio.zsh (Tab completion, cd) ---
+    _path)
+        pick_project "$1" ;;
+    _projects)
+        find "$STUDIO_ROOT/01_PROJECTS" "$STUDIO_ROOT/02_WRITING" -maxdepth 4 \
+             -path '*/00_Admin/Session_Log.txt' 2>/dev/null \
+            | sed 's|/00_Admin/Session_Log.txt$||; s|.*/||' ;;
+    _templates)
+        sub="ProTools"; [ "$1" = "cb" ] && sub="Cubase"
+        find "$STUDIO_ROOT/03_LIBRARY/Templates/$sub" -mindepth 1 -maxdepth 1 -type d 2>/dev/null \
+            | sed 's|.*/||' ;;
+
+    *)
+        echo "Unknown command '$cmd'. Try: studio help"; exit 1 ;;
+esac

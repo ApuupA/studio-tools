@@ -1,0 +1,6 @@
+# Your own settings – every studio has its own
+studio.local.conf
+
+# macOS
+.DS_Store
+._*
