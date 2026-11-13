@@ -24,7 +24,7 @@ Requirements: macOS with zsh (the default). Pro Tools and/or Cubase are optional
 backup and delivery work without them.
 
 ```bash
-git clone <repository-url> ~/studio-tools
+git clone https://github.com/ApuupA/studio-tools.git ~/studio-tools
 ~/studio-tools/studio init
 ```
 
