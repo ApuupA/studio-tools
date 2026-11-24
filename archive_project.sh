@@ -4,7 +4,7 @@
 #   ./archive_project.sh [--no-keep] [PROJECT]
 #   PROJECT: the project folder, any part of its name ("night"), or nothing -> choose from a list
 #
-# 1. copies the project to  <Archive SSD>/Projects/<year>/<project>
+# 1. copies the project to  <backup drive>/<ARCHIVE_FOLDER>/<year>/<project>  (default: Studio_Archive)
 # 2. verifies every file by checksum
 # 3. keeps the final mixes / demos / masters on the Mac in 03_LIBRARY/Portfolio/<project>
 #    (folders: ARCHIVE_KEEP_FOLDERS, newest version only: ARCHIVE_KEEP_LATEST_ONLY)
@@ -32,7 +32,7 @@ fi
 
 PROJECT="$(basename "$SRC")"
 YEAR="$(echo "$PROJECT" | grep -oE '^[0-9]{4}' || date +%Y)"
-DEST="$ARCHIVE_VOLUME/Projects/$YEAR/$PROJECT"
+DEST="$ARCHIVE_VOLUME/${ARCHIVE_FOLDER:-Studio_Archive}/$YEAR/$PROJECT"
 
 size_kb=$(du -sk "$SRC" | awk '{print $1}')
 free_kb=$(df -k "$ARCHIVE_VOLUME" | awk 'NR==2 {print $4}')

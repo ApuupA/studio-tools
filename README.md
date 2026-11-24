@@ -173,9 +173,10 @@ Folders that already contain anything are **never** touched.
 |---|---|---|
 | **Time Machine** – the whole Mac incl. sample libraries, plugins, settings; keeps history | a Time Machine drive | automatically, hourly |
 | **End-of-session copy** – 1:1 incremental copy of the Studio folder | backup drive → `Studio_Mirror/` | `studio end` / double-click `End_Session.command` |
-| **Archive** – finished projects | backup drive → `Projects/<year>/` | `studio archive` |
+| **Archive** – finished projects | backup drive → `Studio_Archive/<year>/` | `studio archive` |
 
-- The backup drive is one external SSD (default name `Studio_Archive`, set by `studio init`). Take it home
+- The backup drive is one external SSD (default name `Studio_Backup`, set by `studio init`). It holds
+  `Studio_Mirror/` and `Studio_Archive/` (folder name: `ARCHIVE_FOLDER` in the settings). Take it home
   after the session and you have an off-site copy.
 - The end-of-session copy is a **mirror**: only new/changed files are copied, files deleted in Studio
   are deleted on the drive too. Going back to older versions = Time Machine.
@@ -269,7 +270,7 @@ If a search matches several projects, you get a list to choose from.
 
 1. **Session templates** – save one empty session per DAW into `03_LIBRARY/Templates/` (see *Session templates* above).
    Without a template, song folders are created empty.
-2. **Backup drive** – name it as you told `studio init` (default `Studio_Archive`) and include it in Time Machine.
+2. **Backup drive** – name it as you told `studio init` (default `Studio_Backup`) and include it in Time Machine.
 3. **Focus mode for `studio start` / `studio end`** – macOS only lets scripts change Focus through a Shortcut:
    Shortcuts app → new shortcut → action **"Set Focus"** → choose your focus → **On**. Name it exactly
    `Studio Focus On`. Make a second one with **Off** named `Studio Focus Off`.
