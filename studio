@@ -3,7 +3,7 @@
 #
 #   studio init [folder]               set up a Studio folder (structure, double-click files, command)
 #   studio start                       Start session (Studio Mode)
-#   studio end                         End session (note, backup, Studio Mode off)
+#   studio end [--no-backup]           End session (note, backup, Studio Mode off)
 #   studio new [options] "Artist" "Title" ["Song" …]
 #   studio add [options] [PROJECT] ["Song" …]
 #   studio archive [--no-keep] [PROJECT]
@@ -29,7 +29,7 @@ case "$cmd" in
     ""|help|-h|--help)
              sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     start)   exec /bin/bash "$D/start_session.sh" ;;
-    end)     exec /bin/bash "$D/end_session.sh" ;;
+    end)     exec /bin/bash "$D/end_session.sh" "$@" ;;
     new)     exec /bin/bash "$D/new_project.sh" "$@" ;;
     add)     exec /bin/bash "$D/add_songs.sh" "$@" ;;
     archive) exec /bin/bash "$D/archive_project.sh" "$@" ;;

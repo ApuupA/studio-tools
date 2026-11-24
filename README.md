@@ -194,6 +194,7 @@ Everything runs through **one command, `studio`**, with Tab completion (installe
 studio init                                    # set up / repair the Studio folder
 studio start                                   # Studio Mode on (same as Start_Session.command)
 studio end                                     # note, backup, Studio Mode off (same as End_Session.command)
+studio end --no-backup                         # … without the backup (drive not here)
 studio new                                     # GUIDED: asks type, artist, title, DAW, template, songs
 studio add                                     # GUIDED: pick project, DAW, template, type the songs
 studio status                                  # overview: all projects, sizes, last notes, backup, session
@@ -235,6 +236,8 @@ If a search matches several projects, you get a list to choose from.
   checks free space / SSD / last backup, then lets you pick a project (most recent first) and opens its newest session.
 - **End_Session**: waits until Pro Tools / Cubase are closed, asks "What did you do today?" (goes into the
   project's `Session_Log.txt` with the session time), backs up to the SSD, Focus off, Mac may sleep again.
+  If the backup drive isn't connected, it asks: wait for it, or skip the backup this time (also `s` while
+  waiting). Skipped backups can be done later with `studio backup`.
 - **Archive**: copies, verifies every file by checksum, **keeps the finals on the Mac** in
   `03_LIBRARY/Portfolio/<project>/` (newest version per song from `03_Mixes`, `03_Demos`, `05_Masters`, `05_Songs`, incl. variants
   like `_Instr` – see `ARCHIVE_KEEP_*` in `studio.conf`), then asks before moving the local copy to the Trash

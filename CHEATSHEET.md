@@ -10,6 +10,7 @@
 | `studio init [folder]` | Set up (or repair) the Studio folder: structure, double-click files, Terminal command |
 | `studio start` | Studio Mode on: Focus, quits distracting apps, keeps Mac awake, checks disk/SSD/backup, opens a session |
 | `studio end` | Waits for the DAW to close, asks for a session note, backs up to the SSD, Studio Mode off |
+| `studio end --no-backup` | The same without the backup (drive at home). Without the option it asks if the drive is missing |
 | `studio status` | Overview: free space, backup, session, all projects with type, size and last note |
 | `studio backup` | Backup to the SSD now, without ending the session |
 

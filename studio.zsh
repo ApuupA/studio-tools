@@ -65,6 +65,8 @@ _studio() {
     case "$cmd" in
         new)
             [[ "$cur" == -* ]] && compadd -- --type --code --daw --pt --cb ;;
+        end)
+            [[ "$cur" == -* ]] && compadd -- --no-backup ;;
         add|archive|open|cd|check|mp3|deliver|approve)
             if [[ "$cur" == -* ]]; then
                 case "$cmd" in
