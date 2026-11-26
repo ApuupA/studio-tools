@@ -65,6 +65,11 @@ if [ $DO_BACKUP -eq 1 ] && ! volume_mounted "$ARCHIVE_VOLUME"; then
     fi
 fi
 
+# Laptop: work on songs from the main Mac goes to the drive first (asks before sending)
+if [ "$MACHINE_ROLE" = "portable" ] && [ -t 0 ] && volume_mounted "$ARCHIVE_VOLUME"; then
+    /bin/bash "$SCRIPT_DIR/sync.sh" --send
+fi
+
 if [ $DO_BACKUP -eq 1 ]; then
     /bin/bash "$SCRIPT_DIR/studio_backup.sh"
     rc=$?

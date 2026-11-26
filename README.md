@@ -172,11 +172,11 @@ Folders that already contain anything are **never** touched.
 | What | Where | When |
 |---|---|---|
 | **Time Machine** – the whole Mac incl. sample libraries, plugins, settings; keeps history | a Time Machine drive | automatically, hourly |
-| **End-of-session copy** – 1:1 incremental copy of the Studio folder | backup drive → `Studio_Mirror/` | `studio end` / double-click `End_Session.command` |
+| **End-of-session copy** – 1:1 incremental copy of the Studio folder | backup drive → `Studio_Mirror/<this Mac>/` | `studio end` / double-click `End_Session.command` |
 | **Archive** – finished projects | backup drive → `Studio_Archive/<year>/` | `studio archive` |
 
 - The backup drive is one external SSD (default name `Studio_Backup`, set by `studio init`). It holds
-  `Studio_Mirror/` and `Studio_Archive/` (folder name: `ARCHIVE_FOLDER` in the settings). Take it home
+  `Studio_Mirror/`, `Studio_Archive/` (folder name: `ARCHIVE_FOLDER`) and `Studio_Sync/`. Take it home
   after the session and you have an off-site copy.
 - The end-of-session copy is a **mirror**: only new/changed files are copied, files deleted in Studio
   are deleted on the drive too. Going back to older versions = Time Machine.
@@ -185,6 +185,62 @@ Folders that already contain anything are **never** touched.
   list). Otherwise archived projects exist only once.
 - The first backup copies everything, later ones only the changes. On the first double-click macOS may block
   the `.command` file: right-click → Open, and allow Terminal access to the folder and the drive.
+
+## Two Macs: studio sync
+
+For a studio Mac that stays in the studio and a laptop you work on at home or on the road. The backup
+drive carries the songs. `studio init` asks each Mac whether it is the **main studio Mac** or a **laptop**.
+
+```
+BACKUPSSD/
+├── Studio_Mirror/
+│   ├── Main/          full backup of the studio Mac   (studio end)
+│   └── Portable/      full backup of the laptop       (studio end)
+├── Studio_Archive/    archived projects
+└── Studio_Sync/       what is being carried, plus the shared library
+```
+
+**One command on both Macs: `studio sync`.** Every time, it
+
+1. **brings in** what is waiting on the drive for this Mac – it says what and asks,
+   e.g. *"From Portable: SACRO – 03_Song · 01_Opener_PT: 1 updated, 12 new · Bring it in?"*
+2. **sends back** (laptop) what you worked on – *"You worked on: … Send it to the drive?"*
+3. asks whether you want to **take** something with you – project, then songs (`2 5`, `a` = all)
+4. merges the **library** (`03_LIBRARY` incl. samples, NAM models, IRs, templates) both ways and
+   **compares plugins** – *"Plugins on Main that are missing here: …"*
+
+`studio take` does only step 3. `studio start` reminds you when work is waiting on the drive, warns when you
+open a song that is out, and `studio end` on the laptop offers to send your work before its backup.
+`studio status` shows what is out and what is waiting.
+
+**Take a song home:** studio Mac → `studio sync` → take → song. At home → `studio sync` (brings it in) →
+work → `studio sync` (sends it back). In the studio → `studio sync` → it's back in the project.
+
+**Writing at home, recording in the studio:** laptop → `studio sync` → take the writing project →
+studio Mac → `studio sync` → *"New project from Portable … Bring it in?"* – it lands in the same place in
+`02_WRITING`.
+
+### Sync never deletes or overwrites anything
+
+| What happened to a file | What sync does |
+|---|---|
+| changed only on the other Mac | the new version takes its place – the old one is **moved** to `<song>/Sync Backups/<date>/` |
+| changed only on this Mac | kept, the incoming copy is ignored |
+| new (consolidated audio, playlists, bounces) | added |
+| deleted on the other Mac | **not** deleted here |
+| a song changed on **both** Macs | comes in as a **second, complete song folder**, e.g. `03_Song_PT (Portable 2026-11-30)`; yours is untouched. Unchanged audio in it is an APFS clone (no extra space) |
+| `Session_Log.txt` | merged – the notes of both Macs are kept |
+
+- The main Mac **lends** songs: they are marked *out* until they come back. The laptop sends back only
+  what changed; unchanged borrowed songs are handed back with it.
+- What travels with a song: its session folder and the light project folders (`SYNC_CARRY_FOLDERS`:
+  `00_Admin 01_Reference 03_Mixes 03_Demos 04_Ideas 05_Songs`). Stems, masters, deliverables and received files
+  travel as empty folders – new files made on the laptop still come back.
+- Not synced: autosaves (`Session File Backups`, `Auto Saves`), waveform caches, `Sync Backups`.
+- Packages that have been brought in move to `Studio_Sync/_Done/` – delete them in Finder when you like.
+- Use the **same Studio folder path** on both Macs (e.g. `~/Scumlight-Studio` with the same user name),
+  so paths saved in sessions (NAM models, IRs) work on both.
+- Close Pro Tools / Cubase before syncing – sync waits for them.
 
 ## Commands
 
@@ -208,6 +264,8 @@ studio tags                                    # re-apply the coloured Finder ta
 studio list                                    # quick project list
 studio open demo                               # open project folder in Finder
 studio cd night                                # go to the project folder in Terminal
+studio sync                                    # carry songs between two Macs on the drive (never deletes)
+studio take                                    # only: put songs on the drive for the other Mac
 studio backup                                  # backup to the SSD now
 ```
 

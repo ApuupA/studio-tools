@@ -12,6 +12,12 @@ source "$SCRIPT_DIR/studio.conf"
 # Environment variables override the config (used for testing).
 STUDIO_ROOT="${STUDIO_ROOT_OVERRIDE:-$STUDIO_ROOT}"
 ARCHIVE_VOLUME="${ARCHIVE_VOLUME_OVERRIDE:-$ARCHIVE_VOLUME}"
+MACHINE_NAME="${MACHINE_NAME_OVERRIDE:-${MACHINE_NAME:-Main}}"
+MACHINE_ROLE="${MACHINE_ROLE_OVERRIDE:-${MACHINE_ROLE:-main}}"
+
+# Places on the backup drive
+MIRROR_DIR="$ARCHIVE_VOLUME/Studio_Mirror/$MACHINE_NAME"     # this Mac's backup
+SYNC_DIR="$ARCHIVE_VOLUME/Studio_Sync"                        # what travels between the Macs
 
 # No STUDIO_ROOT set: the tools may sit inside the Studio folder (Studio/99_SYSTEM/Scripts)
 if [ -z "$STUDIO_ROOT" ]; then
@@ -300,7 +306,11 @@ choose_many() {
     echo >&2
     echo "$q" >&2
     for o in "$@"; do line="$line  $i) $o"; i=$((i + 1)); done
-    echo "$line" >&2
+    if [ ${#line} -le 76 ]; then
+        echo "$line" >&2
+    else
+        i=1; for o in "$@"; do printf "  %2d) %s\n" $i "$o" >&2; i=$((i + 1)); done
+    fi
     while :; do
         read -r -p "> one or more numbers, a = all [Enter = $def] " pick || exit 1
         pick="${pick:-$def}"

@@ -96,6 +96,23 @@ library_section() {
                   END { if (NR) printf "\nLibraries: %d folder(s), %.1f GB in total\n", NR, total / 1048576 }'
 }
 
+# Quick list for "studio sync" (apps + plugins only, no libraries, nothing saved here):
+#   plugin_inventory.sh --quick <file>
+plugins_only() {
+    for app in /Applications/Pro\ Tools*.app /Applications/Cubase*.app /Applications/Nuendo*.app /Applications/WaveLab*.app; do
+        [ -d "$app" ] && printf 'App:      %-28s %s\n' "$(basename "$app" .app)" "$(bundle_version "$app")"
+    done
+    section AAX  aaxplugin "/Library/Application Support/Avid/Audio/Plug-Ins"
+    section VST3 vst3      "/Library/Audio/Plug-Ins/VST3"       "$HOME/Library/Audio/Plug-Ins/VST3"
+    section VST  vst       "/Library/Audio/Plug-Ins/VST"        "$HOME/Library/Audio/Plug-Ins/VST"
+    section AU   component "/Library/Audio/Plug-Ins/Components" "$HOME/Library/Audio/Plug-Ins/Components"
+}
+if [ "$1" = "--quick" ]; then
+    rm -f "$TMP"
+    plugins_only > "${2:?--quick needs a file}"
+    exit 0
+fi
+
 echo "Collecting plugins…"
 {
     echo "PLUGIN INVENTORY   $(date '+%Y-%m-%d %H:%M')"

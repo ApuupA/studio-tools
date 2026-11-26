@@ -2,14 +2,14 @@
 # End-of-session backup: incremental 1:1 copy of the Studio folder to the SSD.
 # Usually started by double-clicking End_Session.command in the Studio folder.
 #
-#   <SSD>/Studio_Mirror/   exact copy of Studio (only new/changed files are copied,
+#   <SSD>/Studio_Mirror/<this Mac>/   exact copy of Studio (only new/changed files are copied,
 #                          files deleted in Studio are deleted here too)
 #
 # Version history (going back in time) comes from Time Machine, not from this copy.
 
 source "$(dirname "$0")/_common.sh"
 
-MIRROR="$ARCHIVE_VOLUME/Studio_Mirror"
+MIRROR="$MIRROR_DIR"
 EXCLUDES="$SCRIPT_DIR/backup_excludes.txt"
 # .last_backup lives only on the SSD; excluding it also protects it from --delete
 RSYNC_OPTS=(-a --delete --exclude-from="$EXCLUDES" --exclude=/.last_backup)
@@ -37,6 +37,25 @@ done
 
 free_gb=$(( $(df -k "$ARCHIVE_VOLUME" | awk 'NR==2 {print $4}') / 1024 / 1024 ))
 [ "$free_gb" -lt "$MIN_FREE_GB" ] && die "Only ${free_gb} GB free on the SSD (minimum ${MIN_FREE_GB} GB)."
+
+# --- Older layout: one mirror directly in Studio_Mirror/ -> move it into this Mac's folder
+OLD="$ARCHIVE_VOLUME/Studio_Mirror"
+if [ ! -d "$MIRROR" ] && { [ -e "$OLD/.last_backup" ] || [ -d "$OLD/01_PROJECTS" ]; }; then
+    echo
+    echo "The backup on the drive is directly in Studio_Mirror/. Now every Mac has its own folder:"
+    echo "  Studio_Mirror/$MACHINE_NAME/   (this Mac)"
+    if ask "Is the existing backup the one of THIS Mac – move it into Studio_Mirror/$MACHINE_NAME/? (nothing is copied or deleted)"; then
+        mkdir -p "$MIRROR" || die "Cannot write to $MIRROR"
+        find "$OLD" -mindepth 1 -maxdepth 1 | while IFS= read -r e; do
+            [ "$e" = "$MIRROR" ] && continue
+            [ -d "$e" ] && [ -e "$e/.last_backup" ] && continue        # another Mac's mirror
+            mv "$e" "$MIRROR/" || die "Could not move $(basename "$e") – nothing else was changed."
+        done
+        log "Moved the existing backup into Studio_Mirror/$MACHINE_NAME/"
+    else
+        echo "  Left as it is. This Mac gets its own, new backup in Studio_Mirror/$MACHINE_NAME/."
+    fi
+fi
 
 mkdir -p "$MIRROR" || die "Cannot write to $MIRROR"
 

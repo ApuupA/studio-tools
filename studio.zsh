@@ -37,6 +37,8 @@ _studio() {
         'mp3:MP3 copies of the final mixes / masters'
         'approve:choose the approved version of a mix / master'
         'deliver:build the client delivery package'
+        'sync:carry songs between your Macs on the drive'
+        'take:put songs on the drive for the other Mac'
         'backup:backup to the SSD now'
         'status:overview of projects, sizes, notes and backup'
         'list:list all projects'
@@ -67,7 +69,7 @@ _studio() {
             [[ "$cur" == -* ]] && compadd -- --type --code --daw --pt --cb ;;
         end)
             [[ "$cur" == -* ]] && compadd -- --no-backup ;;
-        add|archive|open|cd|check|mp3|deliver|approve)
+        add|archive|open|cd|check|mp3|deliver|approve|take)
             if [[ "$cur" == -* ]]; then
                 case "$cmd" in
                     add)     compadd -- --daw --pt --cb ;;

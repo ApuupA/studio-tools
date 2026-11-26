@@ -44,6 +44,15 @@ studio new --type master "Nightfall" "Demo" "Song 1" "Song 2"
 studio new --type write "Nightfall" "New Album" "Riff 1"
 ```
 
+## Two Macs (studio Mac + laptop)
+
+| Command | What it does |
+|---|---|
+| `studio sync` | Brings in what is waiting on the drive, sends back what you changed (laptop), asks if you want to take something, merges the library, compares plugins. **Never deletes or overwrites** |
+| `studio take [PROJECT]` | Only put songs on the drive (project → songs) |
+
+Changed on both Macs → second song folder `… (Portable <date>)`. Replaced files → `Sync Backups/<date>/`.
+
 ## Mixes, masters, delivery
 
 | Command | What it does |

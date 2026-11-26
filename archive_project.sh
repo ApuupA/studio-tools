@@ -24,6 +24,14 @@ SRC="$(resolve_project "$1")" || exit 1
 echo "Project: $(basename "$SRC")"
 volume_mounted "$ARCHIVE_VOLUME" || die "Archive SSD not connected ($ARCHIVE_VOLUME)."
 
+source "$SCRIPT_DIR/_sync_lib.sh"
+OUTSONGS="$(rec_units "${SRC#"$STUDIO_ROOT"/}" lent | /usr/bin/grep '/02_Sessions/' | sed 's|.*/||' | tr '\n' ' ')"
+if [ -n "$OUTSONGS" ]; then
+    echo "⚠️  Songs of this project are still on the drive / at the laptop: $OUTSONGS"
+    read -r -p "Archive anyway? Bring them back first with 'studio sync'. [y/N] " a
+    [ "$a" = "y" ] || exit 1
+fi
+
 if daw_running; then
     echo "A DAW is open. Please close all sessions of this project first."
     read -r -p "Continue anyway? [y/N] " a
@@ -85,7 +93,7 @@ if [ "$a" = "y" ]; then
     # Its copy in Studio_Mirror is now redundant (verified archive copy exists)
     case "$SRC" in
         "$STUDIO_ROOT"/*)
-            OLD_MIRROR="$ARCHIVE_VOLUME/Studio_Mirror/${SRC#"$STUDIO_ROOT"/}"
+            OLD_MIRROR="$MIRROR_DIR/${SRC#"$STUDIO_ROOT"/}"
             [ -d "$OLD_MIRROR" ] && rm -rf "$OLD_MIRROR" && log "Removed redundant mirror copy: $OLD_MIRROR"
             ;;
     esac

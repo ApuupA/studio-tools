@@ -53,6 +53,18 @@ if [ -t 0 ]; then
     DRIVE="$ANSWER"
 fi
 
+# --- 2b. This Mac: main studio Mac or laptop ---------------------------------------
+ROLE="$MACHINE_ROLE"; NAME="$MACHINE_NAME"
+if [ -t 0 ]; then
+    d=1; [ "$MACHINE_ROLE" = "portable" ] && d=2
+    choose "Which Mac is this?" $d "Main studio Mac (home of all projects)" "Laptop (you carry songs to it with studio sync)"
+    [ "$CHOICE" = 1 ] && ROLE="main" || ROLE="portable"
+    def="$MACHINE_NAME"
+    [ "$ROLE" != "$MACHINE_ROLE" ] && { [ "$ROLE" = "main" ] && def="Main" || def="Portable"; }
+    ask "Name of this Mac (its backup goes to Studio_Mirror/<name> on the drive)" "$def"
+    NAME="$(sanitize "$ANSWER")"; NAME="${NAME:-$def}"
+fi
+
 # --- 3. Folder structure -----------------------------------------------------------
 echo
 echo "Studio folder: $ROOT"
@@ -76,6 +88,8 @@ else
     set_local STUDIO_ROOT "$ROOT"
 fi
 [ "/Volumes/$DRIVE" != "$ARCHIVE_VOLUME" ] && set_local ARCHIVE_VOLUME "/Volumes/$DRIVE"
+set_local MACHINE_ROLE "$ROLE"
+set_local MACHINE_NAME "$NAME"
 [ -f "$LOCAL" ] || echo "# Settings of THIS studio – overrides studio.conf. Not tracked in git." > "$LOCAL"
 ok "Settings: studio.local.conf (your own values go there)"
 
@@ -144,4 +158,5 @@ else todo "Backup drive: name it '$DRIVE' and connect it before the first 'studi
 todo "Time Machine: include the backup drive, so archived projects exist twice"
 
 echo
+echo "This Mac: $NAME ($([ "$ROLE" = main ] && echo "main studio Mac" || echo "laptop")) – carry songs between your Macs with: studio sync"
 echo "Ready. First project:   studio new"

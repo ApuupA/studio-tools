@@ -50,7 +50,7 @@ else
 fi
 
 if volume_mounted "$ARCHIVE_VOLUME"; then
-    last="$(cat "$ARCHIVE_VOLUME/Studio_Mirror/.last_backup" 2>/dev/null)"
+    last="$(cat "$MIRROR_DIR/.last_backup" 2>/dev/null)"
     if [ -z "$last" ]; then
         warn "SSD connected, but no backup on it yet"
     else
@@ -58,6 +58,10 @@ if volume_mounted "$ARCHIVE_VOLUME"; then
         if [ $age_d -gt "$BACKUP_WARN_DAYS" ]; then warn "Last backup is $age_d days old ($last)"
         else ok "SSD connected – last backup $last"; fi
     fi
+    source "$SCRIPT_DIR/_sync_lib.sh"
+    while IFS= read -r p; do
+        warn "Waiting on the drive from $(pkg_field "$p" FROM): $(pkg_summary "$p")  →  studio sync"
+    done < <(packages_for_me)
 else
     warn "Backup SSD '$(basename "$ARCHIVE_VOLUME")' not connected – plug it in before End_Session"
 fi
@@ -101,6 +105,14 @@ if [ -t 0 ]; then
             done
             read -r -p "> " pick
             if [[ "$pick" =~ ^[0-9]+$ ]] && [ "$pick" -ge 1 ] && [ "$pick" -le ${#sessions[@]} ]; then
+                # song on the road? say so before it is opened
+                source "$SCRIPT_DIR/_sync_lib.sh"
+                u="$(dirname "${sessions[$((pick - 1))]}")"; u="${u#"$STUDIO_ROOT"/}"
+                case "$(rec_field "$u" STATE)" in
+                    lent) warn "This song is on the drive for the laptop since $(rec_field "$u" SINCE)."
+                          echo "     Changes here will come back as a second version when it returns." ;;
+                    sent) warn "You sent this song to the main Mac on $(rec_field "$u" SINCE) – the newest version may be there." ;;
+                esac
                 open "${sessions[$((pick - 1))]}" && ok "Opening $(basename "${sessions[$((pick - 1))]}")"
             else
                 open "$PROJECT"

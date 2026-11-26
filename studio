@@ -11,6 +11,8 @@
 #   studio mp3 [--all] [PROJECT|files] MP3 copies of the final mixes / masters
 #   studio approve [PROJECT]           choose the approved version if it is not the newest
 #   studio deliver [PROJECT]           build the client package (WAV + MP3 + tracklist + zip)
+#   studio sync                        carry songs between your Macs on the drive (never deletes)
+#   studio take [PROJECT]              put songs on the drive to take them to the other Mac
 #   studio backup                      backup to the SSD now (without ending the session)
 #   studio status                      overview: projects, sizes, last notes, backup
 #   studio list                        all projects, newest first (quick)
@@ -27,12 +29,14 @@ cmd="$1"; [ $# -gt 0 ] && shift
 case "$cmd" in
     init)    exec /bin/bash "$D/init_studio.sh" "$@" ;;
     ""|help|-h|--help)
-             sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+             sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     start)   exec /bin/bash "$D/start_session.sh" ;;
     end)     exec /bin/bash "$D/end_session.sh" "$@" ;;
     new)     exec /bin/bash "$D/new_project.sh" "$@" ;;
     add)     exec /bin/bash "$D/add_songs.sh" "$@" ;;
     archive) exec /bin/bash "$D/archive_project.sh" "$@" ;;
+    sync)    exec /bin/bash "$D/sync.sh" "$@" ;;
+    take)    exec /bin/bash "$D/sync.sh" --take "$@" ;;
     backup)  exec /bin/bash "$D/studio_backup.sh" ;;
     plugins) exec /bin/bash "$D/plugin_inventory.sh" ;;
     check)   exec /bin/bash "$D/check_files.sh" "$@" ;;
@@ -59,7 +63,7 @@ case "$cmd" in
         echo
         echo "Mac:      $(( $(df -k "$STUDIO_ROOT" | awk 'NR==2 {print $4}') / 1024 / 1024 )) GB free"
         if volume_mounted "$ARCHIVE_VOLUME"; then
-            last="$(cat "$ARCHIVE_VOLUME/Studio_Mirror/.last_backup" 2>/dev/null)"
+            last="$(cat "$MIRROR_DIR/.last_backup" 2>/dev/null)"
             if [ -n "$last" ]; then
                 d=$(( (now - $(date -j -f '%Y-%m-%d %H:%M:%S' "$last" +%s)) / 86400 ))
                 echo "Backup:   SSD connected – last backup $last ($d day(s) ago)"
@@ -77,6 +81,19 @@ case "$cmd" in
             echo "Session:  Studio Mode ON since $(date -r "$st" '+%H:%M')${sp:+ – $(basename "$sp")}"
         else
             echo "Session:  Studio Mode off"
+        fi
+        source "$D/_sync_lib.sh"
+        echo "This Mac: $MACHINE_NAME ($([ "$MACHINE_ROLE" = main ] && echo "main Mac" || echo "laptop"))"
+        out="$(rec_units "" lent | /usr/bin/grep '/02_Sessions/' | while IFS= read -r u; do
+                 echo "          $(basename "$(rec_field "$u" PROJECT)") – $(basename "$u")  (since $(rec_field "$u" SINCE))"; done)"
+        [ -n "$out" ] && { echo "Out:      songs on the drive / at the laptop:"; echo "$out"; }
+        if volume_mounted "$ARCHIVE_VOLUME"; then
+            while IFS= read -r p; do
+                echo "Sync:     waiting for this Mac from $(pkg_field "$p" FROM): $(pkg_summary "$p")  →  studio sync"
+            done < <(packages_for_me)
+            while IFS= read -r p; do
+                echo "Sync:     waiting for the other Mac: $(pkg_summary "$p")"
+            done < <(packages_from_me)
         fi
         echo
         printf "%-44s %-16s %-11s %7s  %s\n" "PROJECT" "TYPE" "LAST WORK" "SIZE" "LAST NOTE"
